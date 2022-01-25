@@ -1,10 +1,23 @@
+import csv
+
 import nltk
 from nltk import corpus, word_tokenize, WordNetLemmatizer
 from nltk.stem import PorterStemmer
-
+from langdetect import detect
 nltk.download('stopwords')
 nltk.download('punkt')
 import re
+
+def open_data_file(location):
+    rows = []
+    with open(location) as file:
+        csvreader = csv.reader(file, quoting=csv.QUOTE_NONE,  delimiter='\n')
+        header = next(csvreader)
+        for row in csvreader:
+            if len(row) == 1:
+                rows.append(row[0])
+    return rows
+
 
 
 """ This method splits the data into conversations.
@@ -24,7 +37,7 @@ def genererate_conversations(rows, is_test):
                 conversations.append(current_con)
                 current_con = ""
                 count += 1
-                if count == 100:
+                if count == 10000:
                     return conversations
             else:
                 current_con += ' '
@@ -40,19 +53,22 @@ def genererate_conversations(rows, is_test):
     return conversations
 
 
-""" This  method runs the preprosses method for each conversation """
-
-
+""" This  method filters out  non-english conversations and then 
+    runs the preprosses method for each conversation """
 def process_conversations(conversations):
     processed = []
     for convo in conversations:
-        processed.append(preprocess(convo))
+        try :
+            language = detect(convo)
+        except:
+            language = 'error'
+
+        if language == 'en':
+            processed.append(preprocess(convo))
     return processed
 
 
 """ This method processes the text and tokenizes the conversation"""
-
-
 def preprocess(conversation):
     filtered = punctuation_handles(conversation.lower())
     tokens = tokenize_stem_stop(filtered, True, True)
@@ -73,16 +89,20 @@ def punctuation_handles(con):
 def tokenize_stem_stop(text, stem=True, lemma=True):
     tokens = word_tokenize(text)
     stop_words = set(corpus.stopwords.words("english"))
+    stop_words.union({'u','hi', 'sorri'})
+
     filtered_sentence = []
-    for w in tokens:
-        if w not in stop_words:
-            filtered_sentence.append(w)
+
     if stem:
         stemmer = PorterStemmer()
-        filtered_sentence = [stemmer.stem(t) for t in filtered_sentence]
+        tokens = [stemmer.stem(t) for t in tokens]
 
     if lemma:
         lemmatizer = WordNetLemmatizer()
-        filtered_sentence = [lemmatizer.lemmatize(t) for t in filtered_sentence]
+        tokens = [lemmatizer.lemmatize(t) for t in tokens]
+
+    for w in tokens:
+        if w not in stop_words:
+            filtered_sentence.append(w)
 
     return filtered_sentence

@@ -1,22 +1,17 @@
-import csv
 from gensim import corpora, models
 import gensim
 import functions
 import nltk
+import os
 nltk.download('wordnet')
 nltk.download('omw-1.4')
 
 if __name__ == "__main__":
-    rows = []
-    with open('data.csv') as file:
-        csvreader = csv.reader(file, quoting=csv.QUOTE_NONE,  delimiter='\n')
-        header = next(csvreader)
-        for row in csvreader:
-            if len(row) == 1:
-                rows.append(row[0])
+    location = os.path.split(os.getcwd())[0] + '/data.csv'
 
-    #split and process data
-    conversations = functions.genererate_conversations(rows, False)
+    #open, split and process data
+    data = functions.open_data_file(location)
+    conversations = functions.genererate_conversations(data, is_test=True)
     processed = functions.process_conversations(conversations)
 
     #generate dictionary from tokens
