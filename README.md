@@ -26,4 +26,28 @@ the K-Means Clustering algorithm. Then for each  of the  clusters, we got the to
 This did not yield satisfactory results. Next we made use of  Latent Dirichlet allocation (LDA) to perform the 
 Topic Extraction. We were left with  the following 10 topics:
 
+| Topics                      | Keywords                        |
+|-----------------------------|---------------------------------|
+| Transportation / Rail       | Train, Service, Delay, Ticket   |
+| Technical Support / General | Issue, Update                   |
+| Support Request             | Send, Email, Help, Assist       |
+| Gaming / Software Support   | Game, App, Play, Error          |
+| Technical Support / Telecom | Iphone, Phone, Update           |
+| Retail                      | Store, Card, Return             |
+| Telecom                     | Account, Phone, Number, Service |
+| Delivery / Logistics        | Order, Package, Delivery        |
+| Transportation / Airline    | Flight, Time, Delay             |
+| General Support             | Email, Account, Adress, Private |
 
+# Discussion
+Due to its unsupervised nature, topic discovery is a tough problem.
+There are however some methods other than LDA that can be used to solve it.
+One such method is Latent Semantic Analysis. It constructs a word occurrence matrix,
+which is then analized to find the patterns with the text. 
+
+# User Guide
+The code in this repository can be  used as follows:
+1. Load the  file and split it into conversations (Check for correct separator)
+2. Pre-Process the conversations using `process_conversations()` Note that this is multicore par default
+3. For cluster based analysis call `cluster_conversations()`
+4. For LDA analysis call `LDA_analysis()`

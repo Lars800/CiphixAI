@@ -1,7 +1,6 @@
 import csv
 import collections
 import math
-
 import nltk
 import numpy as np
 from nltk import corpus, word_tokenize, WordNetLemmatizer
@@ -10,11 +9,15 @@ from langdetect import detect
 from sklearn.cluster import KMeans
 from sklearn.feature_extraction.text import TfidfVectorizer
 import gensim
+import re
+from multiprocessing import Pool, cpu_count
 
 nltk.download('stopwords')
 nltk.download('punkt')
-import re
-from multiprocessing import Pool, cpu_count
+nltk.download('wordnet')
+nltk.download('omw-1.4')
+
+""" This method opens a data file """
 
 
 def open_data_file(location):
@@ -182,3 +185,19 @@ def cluster_conversations(conversations, clusters):
         topics.append(vectorize_conversations(current_obs, min=2, max=0.6, return_top_words=True))
 
     return topics
+
+
+""" This method implements LDA """
+
+
+def LDA_analysis(processed):
+    dictionary = gensim.corpora.Dictionary(processed)
+    dictionary.filter_extremes(no_below=15, no_above=0.5, keep_n=100000)
+    bagged_convos = [dictionary.doc2bow(convo) for convo in processed]
+
+    # run Latent Dirichlet allocation model
+    lda_model = gensim.models.LdaMulticore(bagged_convos, num_topics=10, id2word=dictionary, passes=2,
+                                           workers=cpu_count() - 1)
+    for idx, topic in lda_model.print_topics(-1):
+        print('Topic: {} \nWords: {}'.format(idx, topic))
+    return
