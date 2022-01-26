@@ -10,6 +10,7 @@ from langdetect import detect
 from sklearn.cluster import KMeans
 from sklearn.feature_extraction.text import TfidfVectorizer
 import gensim
+
 nltk.download('stopwords')
 nltk.download('punkt')
 import re
@@ -19,13 +20,12 @@ from multiprocessing import Pool, cpu_count
 def open_data_file(location):
     rows = []
     with open(location) as file:
-        csvreader = csv.reader(file, quoting=csv.QUOTE_NONE,  delimiter='\n')
+        csvreader = csv.reader(file, quoting=csv.QUOTE_NONE, delimiter='\n')
         header = next(csvreader)
         for row in csvreader:
             if len(row) == 1:
                 rows.append(row[0])
     return rows
-
 
 
 """ This method splits the data into conversations.
@@ -45,7 +45,7 @@ def genererate_conversations(rows, is_test):
                 conversations.append(current_con)
                 current_con = ""
                 count += 1
-                if count == 100:
+                if count == 1000:
                     return conversations
             else:
                 current_con += ' '
@@ -60,32 +60,36 @@ def genererate_conversations(rows, is_test):
             current_con += row
     return conversations
 
+
 """  This method  passes the conversations to to the processing method,
     Per default it does so in a parralel way    """
+
+
 def process_conversations(conversations, multi_core=True):
     if multi_core:
         n_threads = cpu_count() - 1
-        chunks = math.floor(len(conversations) /  n_threads)
+        chunks = math.floor(len(conversations) / n_threads)
         with Pool(n_threads) as pool:
             result = pool.map(func=preprocess, iterable=conversations,
                               chunksize=chunks)
             pool.close()
             pool.join()
-        for convo in result:
-            if convo  ==  -1:
-                result.remove(convo)
-
-        return result
+            clean = [x for x in result if x != -1]
+            return clean
 
     else:
         processed = []
         for convo in conversations:
-            result = preprocess(convo)
-            if result != -1:
-                processed.append(result)
-        return processed
+            pros = preprocess(convo)
+            if pros != -1:
+                processed.append(pros)
+
+    return processed
+
 
 """ This method filters, processes and tokenizes the conversation"""
+
+
 def preprocess(conversation):
     try:
         language = detect(conversation)
@@ -102,17 +106,22 @@ def preprocess(conversation):
 
 """ this method filters the text by removing  @xxxxx twitter handles,
  hyperlinks, and special characters (including emojiis) """
+
+
 def punctuation_handles(con):
     no_handles = re.sub(r'@[1-9a-zA-Z]+', r'', con)
     no_links = re.sub(r'https[^ \t\n]+', r'', no_handles)
     no_specialchar = re.sub(r'[^a-zA-Z ]+', r'', no_links)
     return no_specialchar
 
+
 """ This method  tokenizes and  processes the words"""
+
+
 def tokenize_stem_stop(text, stem=True, lemma=True):
     tokens = word_tokenize(text)
     stop_words = set(corpus.stopwords.words("english"))
-    stop_words.union({'u','hi', 'thi', 'thank', 'plea', 'sorri', 'dm'})
+    stop_words.union({'u', 'hi', 'thi', 'thank', 'plea', 'sorri', 'dm'})
 
     filtered_sentence = []
 
@@ -130,7 +139,10 @@ def tokenize_stem_stop(text, stem=True, lemma=True):
 
     return filtered_sentence
 
+
 """ This method implements TF-IDF vectorization"""
+
+
 def vectorize_conversations(token_list, min=0.1, max=0.7, return_top_words=False):
     joined_tokens = []
     for token in token_list:
@@ -150,7 +162,10 @@ def vectorize_conversations(token_list, min=0.1, max=0.7, return_top_words=False
 
     return response
 
+
 """ This method clusters the conversations, and extracts the topics per cluster"""
+
+
 def cluster_conversations(conversations, clusters):
     vector_model = vectorize_conversations(conversations)
     km_model = KMeans(n_clusters=clusters)
@@ -167,4 +182,3 @@ def cluster_conversations(conversations, clusters):
         topics.append(vectorize_conversations(current_obs, min=2, max=0.6, return_top_words=True))
 
     return topics
-

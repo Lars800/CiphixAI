@@ -16,9 +16,6 @@ if __name__ == "__main__":
     data = functions.open_data_file(location)
     conversations = functions.genererate_conversations(data, is_test=False)
     processed = functions.process_conversations(conversations)
-
-    clusters = functions.cluster_conversations(processed, 10)
-
     #generate dictionary from tokens
     dictionary = gensim.corpora.Dictionary(processed)
     dictionary.filter_extremes(no_below=15, no_above=0.5, keep_n=100000)
